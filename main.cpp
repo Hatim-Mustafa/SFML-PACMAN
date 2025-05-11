@@ -901,7 +901,7 @@ int main() {
 					delete manage;
 
 					// Reinitialize everything
-					pac = new Pac(&map);
+					pac = new Pac(&map,&pacTexture);
 					shadow = new Blinky(&map);
 					speedy = new Pinky(&map);
 					bashful = new Inky(&map, shadow);
