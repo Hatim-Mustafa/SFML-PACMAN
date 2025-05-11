@@ -67,6 +67,14 @@ public:
 
 	}
 
+void setInitialPosition() {
+	pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f);
+}
+
+void setInitialVelocity() {
+	velocity = Vector2f(-3.f, 0.f);
+}
+
 	void draw(RenderWindow& window) {
 		//window.draw(pacman);
 		window.draw(pacSprite);
