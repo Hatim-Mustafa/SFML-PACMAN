@@ -39,27 +39,37 @@ bool GameState::isPaused = false;
 class Pac {
 private:
 	CircleShape pacman;
+	Sprite pacSprite;
+	Texture* pacTexture;
 	Vector2f velocity;
 	Map* map;
 	std::string premove;
 
+	// Animation variables
+	int currentFrame = 0;
+	float frameTimer = 0.f;
+	float frameDelay = 0.1f;
+	Vector2i frameSize = { 32, 32 };
+	int totalFrames = 3; 
+	int directionRow = 1; // 0: right, 1: left, 2: up, 3: down
+
 public:
-	Pac(Map* gameMap) : pacman(16.f), velocity(-3.f, 0.f), map(gameMap), premove("") {
+	Pac(Map* gameMap, Texture *texture) : pacman(16.f), velocity(-3.f, 0.f), map(gameMap), premove(""),pacTexture(texture) {
 		pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f); // Center in tile
 		pacman.setFillColor(Color::Yellow);
 		pacman.setOrigin(8.f, 8.f - 45.f); // Center origin
-	}
 
-	void setInitialPosition() {
-		pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f);
-	}
+		pacSprite.setTexture(*pacTexture);
+		pacSprite.setTextureRect(IntRect(0, 0, frameSize.x, frameSize.y));
+		pacSprite.setOrigin(frameSize.x / 3.5f, frameSize.y / 3.5f);
+		pacSprite.setScale(1.f, 1.f); 
 
-	void setInitialVelocity() {
-		velocity = Vector2f(-3.f, 0.f);
+
 	}
 
 	void draw(RenderWindow& window) {
-		window.draw(pacman);
+		//window.draw(pacman);
+		window.draw(pacSprite);
 	}
 
 	float getR() {
@@ -73,14 +83,22 @@ public:
 	void handleInput(Event& event) {
 		if (event.type == Event::KeyPressed) {
 			Vector2f temp = velocity;
-			if (event.key.code == Keyboard::Right)
+			if (event.key.code == Keyboard::Right) {
 				velocity = Vector2f(2.f, 0.f);
-			else if (event.key.code == Keyboard::Left)
+				directionRow = 0;
+			}
+			else if (event.key.code == Keyboard::Left) {
 				velocity = Vector2f(-2.f, 0.f);
-			else if (event.key.code == Keyboard::Up)
+				directionRow = 1;
+			}
+			else if (event.key.code == Keyboard::Up) {
 				velocity = Vector2f(0.f, -2.f);
-			else if (event.key.code == Keyboard::Down)
+				directionRow = 2;
+			}
+			else if (event.key.code == Keyboard::Down) {
 				velocity = Vector2f(0.f, 2.f);
+				directionRow = 3;
+			}
 			Vector2f checkVelocity(velocity.x * 7, velocity.y * 7);
 			Vector2f newPosition = pacman.getPosition() + checkVelocity;
 			if (willCollide(newPosition)) {
@@ -96,14 +114,22 @@ public:
 	void handlePremove(std::string dir) {
 		if (dir != "") {
 			Vector2f temp = velocity;
-			if (dir == "Right")
+			if (dir == "Right") {
 				velocity = Vector2f(2.f, 0.f);
-			else if (dir == "Left")
+				directionRow = 0;
+			}
+			else if (dir == "Left") {
 				velocity = Vector2f(-2.f, 0.f);
-			else if (dir == "Up")
+				directionRow = 1;
+			}
+			else if (dir == "Up") {
 				velocity = Vector2f(0.f, -2.f);
-			else if (dir == "Down")
+				directionRow = 2;
+			}
+			else if (dir == "Down") {
 				velocity = Vector2f(0.f, 2.f);
+				directionRow = 3;
+			}
 			Vector2f checkVelocity(velocity.x * 7, velocity.y * 7);
 			Vector2f newPosition = pacman.getPosition() + checkVelocity;
 			if (willCollide(newPosition)) {
@@ -128,7 +154,11 @@ public:
 		}
 	}
 
-	void update() {
+	void update(float deltaTime) {
+		
+		Vector2f pacPos = pacman.getPosition();
+		pacSprite.setPosition(pacPos.x,pacPos.y + 45.f);
+
 		//checking for premove
 		handlePremove(premove);
 
@@ -141,6 +171,18 @@ public:
 		// Check collision in movement direction
 		if (!willCollide(newPosition)) {
 			pacman.move(velocity);
+		}
+
+		frameTimer += deltaTime;
+		if (frameTimer >= frameDelay) {
+			frameTimer -= frameDelay;
+			currentFrame = (currentFrame + 1) % totalFrames;
+			pacSprite.setTextureRect(IntRect(
+				currentFrame * frameSize.x,
+				directionRow * frameSize.y,
+				frameSize.x,
+				frameSize.y
+			));
 		}
 	}
 
@@ -796,8 +838,14 @@ int main() {
 	RenderWindow window(VideoMode(690, 765 + 90), "PAC-MAN");
 	window.setFramerateLimit(60);
 
+
+	sf::Texture pacTexture;
+	if (!pacTexture.loadFromFile("C:/Users/umera/Downloads/pacman10.png")) {
+		std::cout << "Failed to load Pac-Man sprite!" << std::endl;
+	}
+	
 	Map map;
-	Pac* pac = new Pac(&map); // Use pointers for clean reset
+	Pac* pac = new Pac(&map, &pacTexture); // Use pointers for clean reset
 	Blinky* shadow = new Blinky(&map);
 	Clyde* pokey = new Clyde(&map);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
 	Pinky* speedy = new Pinky(&map);
@@ -874,7 +922,7 @@ int main() {
 		}
 
 		if (!game.isGameOver() && delayOver) {
-			pac->update();
+			pac->update(clock.restart().asSeconds());
 			manage->Score();
 
 			// Ghost movement
