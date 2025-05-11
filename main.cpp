@@ -443,7 +443,7 @@ public:
 class Blinky : public Ghost {
 private:
 public:
-	Blinky(Map* map) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 0.f) {}
+	Blinky(Map* map) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 4.f) {}
 
 	void MoveGhost(Pac& pac) override {
 
@@ -476,7 +476,7 @@ private:
 	sf::Clock releaseClock;
 
 public:
-	Pinky(Map* map) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 3.f) {
+	Pinky(Map* map) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 7.f) {
 	}
 
 	void MoveGhost(Pac& pac) override {
@@ -520,7 +520,7 @@ private:
 
 public:
 	Inky(Map* map, Blinky* blinkyRef)
-		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 6.f), blinky(blinkyRef) {
+		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 10.f), blinky(blinkyRef) {
 	}
 
 	void MoveGhost(Pac& pac) override {
@@ -610,7 +610,7 @@ private:
 	Vector2f scatterCorner; // Bottom-left corner (0, mapHeight-1)
 
 public:
-	Clyde(Map* map) : Ghost(map, Color(255, 165, 0), 25.5, 23, Vector2f(0.f, -1.5f), 9.f) {
+	Clyde(Map* map) : Ghost(map, Color(255, 165, 0), 25.5, 23, Vector2f(0.f, -1.5f), 13.f) {
 		scatterCorner = Vector2f(40.f, (map->getRows() - 3) * 15.f + 8.f);
 	}
 
