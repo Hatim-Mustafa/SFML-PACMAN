@@ -286,6 +286,8 @@ protected:
 	Color color;
 	Vector2f velocity;
 	float speed;
+	float releaseDelay;
+	sf::Clock releaseClock;
 	Map* map;
 	bool isScared = false;
 
@@ -362,15 +364,17 @@ protected:
 
 public:
 
-	Ghost(Map* gameMap, Color ghostColor, float startX, float startY, Vector2f initialVelocity) :
-		map(gameMap), color(ghostColor), velocity(initialVelocity) {
+	Ghost(Map* gameMap, Color ghostColor, float startX, float startY, Vector2f initialVelocity, float delay = 0.f)
+		: map(gameMap), color(ghostColor), velocity(initialVelocity), releaseDelay(delay) {
 		ghost.setSize(Vector2f(32.f, 32.f));
 		ghost.setFillColor(ghostColor);
 		position = Vector2f(startX * 15.f, startY * 15.f);
 		ghost.setPosition(position);
 		ghost.setOrigin(16.f, 16.f - 45.f);
-		speed = 0.75f;  // basic speed
+		speed = 0.75f;
+		releaseClock.restart();
 	}
+
 
 
 	void draw(RenderWindow& window) {
@@ -429,9 +433,13 @@ public:
 class Blinky : public Ghost {
 private:
 public:
-	Blinky(Map* map) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f)) {}
+	Blinky(Map* map) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 0.f) {}
 
 	void MoveGhost(Pac& pac) override {
+
+		if (releaseClock.getElapsedTime().asSeconds() < releaseDelay)
+			return;
+
 		Vector2f startPos = ghost.getPosition();
 		Vector2f targetPos = pac.getP();
 
@@ -458,11 +466,14 @@ private:
 	sf::Clock releaseClock;
 
 public:
-	Pinky(Map* map) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f)) {
-		releaseClock.restart();
+	Pinky(Map* map) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 3.f) {
 	}
 
 	void MoveGhost(Pac& pac) override {
+
+		if (releaseClock.getElapsedTime().asSeconds() < releaseDelay)
+			return;
+
 		Vector2f startPos = ghost.getPosition();
 		Vector2f pacPos = pac.getP();
 		Vector2f pacVel = pac.getVelocity();
@@ -495,16 +506,17 @@ public:
 class Inky : public Ghost {
 private:
 	Blinky* blinky; // Need reference to Blinky for targeting
-	Clock releaseClock;
 	bool released = false;
 
 public:
 	Inky(Map* map, Blinky* blinkyRef)
-		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f)), blinky(blinkyRef) {
-		releaseClock.restart();
+		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 6.f), blinky(blinkyRef) {
 	}
 
 	void MoveGhost(Pac& pac) override {
+
+		if (releaseClock.getElapsedTime().asSeconds() < releaseDelay)
+			return;
 
 		Vector2f startPos = ghost.getPosition();
 		Vector2f pacPos = pac.getP();
@@ -586,12 +598,10 @@ private:
 class Clyde : public Ghost {
 private:
 	Vector2f scatterCorner; // Bottom-left corner (0, mapHeight-1)
-	Clock releaseClock;
 
 public:
-	Clyde(Map* map) : Ghost(map, Color(255, 165, 0), 25.5, 23, Vector2f(0.f, -1.5f)) {
+	Clyde(Map* map) : Ghost(map, Color(255, 165, 0), 25.5, 23, Vector2f(0.f, -1.5f), 9.f) {
 		scatterCorner = Vector2f(40.f, (map->getRows() - 3) * 15.f + 8.f);
-		releaseClock.restart();
 	}
 
 	float calculateDistance(const Vector2f& pos1, const Vector2f& pos2) {
@@ -601,6 +611,10 @@ public:
 	}
 
 	void MoveGhost(Pac& pac) override {
+
+		if (releaseClock.getElapsedTime().asSeconds() < releaseDelay)
+			return;
+
 		Vector2f startPos = ghost.getPosition();
 		Vector2f pacPos = pac.getP();
 
