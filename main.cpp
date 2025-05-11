@@ -437,11 +437,11 @@ public:
 
 
 
-	void draw(RenderWindow& window) {
+	virtual void draw(RenderWindow& window) {
 		window.draw(ghost);
 	}
 
-	void update() {
+	virtual void update() {
 		Vector2f newPos = ghost.getPosition() + velocity;
 
 		// Check if we can continue in current direction
@@ -524,9 +524,17 @@ class Pinky : public Ghost {
 private:
 	bool released = false;
 	sf::Clock releaseClock;
+	sf::Sprite pinkySprite;
+	sf::Texture* pinkyTex;
 
 public:
-	Pinky(Map* map) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 7.f) {
+	Pinky(Map* map, Texture *pinkyTex) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 7.f),pinkyTex(pinkyTex) {
+		pinkySprite.setTexture(*pinkyTex);
+
+		pinkySprite.setOrigin(16.f, 16.f);
+
+		pinkySprite.setScale(1.f, 1.f);
+		pinkySprite.setPosition(22.5f * 15.f, 23.f * 15.f + 45.f);
 	}
 
 	void MoveGhost(Pac& pac) override {
@@ -558,6 +566,32 @@ public:
 			velocity = dir * 0.70f;  // Apparantely Pinky slower than Blinky
 			ghost.move(velocity);
 		}
+	}
+	void update() override {
+		Vector2f newPos = ghost.getPosition() + velocity;
+
+		if (!willCollide(newPos)) {
+			ghost.move(velocity);
+			position = ghost.getPosition();
+		}
+		else {
+			std::vector<Vector2f> possibleDirections = {
+				{speed, 0}, {-speed, 0}, {0, speed}, {0, -speed}
+			};
+
+			for (auto& dir : possibleDirections) {
+				if (!willCollide(ghost.getPosition() + dir)) {
+					velocity = dir;
+					break;
+				}
+			}
+		}
+		pinkySprite.setPosition(ghost.getPosition().x,ghost.getPosition().y + 45.f);
+	}
+
+	void draw(sf::RenderWindow& window) override {
+		//window.draw(ghost);
+		window.draw(pinkySprite);  
 	}
 
 
@@ -845,9 +879,13 @@ int main() {
 
 	RenderWindow window(VideoMode(690, 765 + 90), "PAC-MAN");
 	window.setFramerateLimit(60);
+	
+	Texture pinkyTex;
+	if (!pinkyTex.loadFromFile("C:/Users/umera/Downloads/pinkysprite.png")) {
+		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
+	}
 
-
-	sf::Texture pacTexture;
+	Texture pacTexture;
 	if (!pacTexture.loadFromFile("C:/Users/umera/Downloads/pacman10.png")) {
 		std::cout << "Failed to load Pac-Man sprite!" << std::endl;
 	}
@@ -856,7 +894,7 @@ int main() {
 	Pac* pac = new Pac(&map, &pacTexture); // Use pointers for clean reset
 	Blinky* shadow = new Blinky(&map);
 	Clyde* pokey = new Clyde(&map);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
-	Pinky* speedy = new Pinky(&map);
+	Pinky* speedy = new Pinky(&map, &pinkyTex);
 	Inky* bashful = new Inky(&map, shadow);
 
 	Clock clock;
@@ -903,7 +941,7 @@ int main() {
 					// Reinitialize everything
 					pac = new Pac(&map,&pacTexture);
 					shadow = new Blinky(&map);
-					speedy = new Pinky(&map);
+					speedy = new Pinky(&map, &pinkyTex);
 					bashful = new Inky(&map, shadow);
 					pokey = new Clyde(&map);
 
