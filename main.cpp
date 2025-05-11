@@ -1,6 +1,7 @@
 // Hatim Check exactly WHY the ghosts are rubbing against the walls 
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include "Map.h"
 #include <string>
 #include <iostream>
@@ -47,6 +48,14 @@ public:
 		pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f); // Center in tile
 		pacman.setFillColor(Color::Yellow);
 		pacman.setOrigin(8.f, 8.f - 45.f); // Center origin
+	}
+
+	void setInitialPosition() {
+		pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f);
+	}
+
+	void setInitialVelocity() {
+		velocity = Vector2f(-3.f, 0.f);
 	}
 
 	void draw(RenderWindow& window) {
@@ -192,6 +201,7 @@ public:
 	bool isEaten;
 
 	Food() {}
+
 	Food(Map* fmap, Pac* pman, int rows, int cols) :isEaten(false), fmap(fmap), pman(pman), rows(rows), cols(cols), f(3.f) {
 
 		f.setFillColor(sf::Color::White);
@@ -240,7 +250,7 @@ private:
 
 public:
 	FoodManager(Food* food, Map* fmap, Pac* pman) : food(food), fmap(fmap), pman(pman), velocity(-3.f, 0.f) {
-		if (!font.loadFromFile("C:/Users/admin/Desktop/Project/pac2/Emulogic-zrEw.ttf")) {
+		if (!font.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/Emulogic-zrEw.ttf")) {
 			std::cout << "could not open file" << std::endl;
 		}
 
@@ -433,7 +443,7 @@ public:
 class Blinky : public Ghost {
 private:
 public:
-	Blinky(Map* map) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 0.f) {}
+	Blinky(Map* map) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 4.f) {}
 
 	void MoveGhost(Pac& pac) override {
 
@@ -466,7 +476,7 @@ private:
 	sf::Clock releaseClock;
 
 public:
-	Pinky(Map* map) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 3.f) {
+	Pinky(Map* map) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 7.f) {
 	}
 
 	void MoveGhost(Pac& pac) override {
@@ -510,7 +520,7 @@ private:
 
 public:
 	Inky(Map* map, Blinky* blinkyRef)
-		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 6.f), blinky(blinkyRef) {
+		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 10.f), blinky(blinkyRef) {
 	}
 
 	void MoveGhost(Pac& pac) override {
@@ -600,7 +610,7 @@ private:
 	Vector2f scatterCorner; // Bottom-left corner (0, mapHeight-1)
 
 public:
-	Clyde(Map* map) : Ghost(map, Color(255, 165, 0), 25.5, 23, Vector2f(0.f, -1.5f), 9.f) {
+	Clyde(Map* map) : Ghost(map, Color(255, 165, 0), 25.5, 23, Vector2f(0.f, -1.5f), 13.f) {
 		scatterCorner = Vector2f(40.f, (map->getRows() - 3) * 15.f + 8.f);
 	}
 
@@ -647,17 +657,38 @@ public:
 
 
 class GameSimulation {
-private:
+	SoundBuffer buffer1;
+	Sound beginningSound;
+	SoundBuffer buffer2;
+	Sound chompSound;
+	SoundBuffer buffer3;
+	Sound deathSound;
 	bool gameOver;
 	bool gameWon;
 	Font font;
 	Text gameOverText;
 	Text winText;
 	Text restartText;
+	int livesLeft;
 
 public:
-	GameSimulation() : gameOver(false), gameWon(false) {
-		if (!font.loadFromFile("C:/Users/admin/Desktop/Project/pac2/Emulogic-zrEw.ttf")) {
+	GameSimulation() : gameOver(false), gameWon(false), livesLeft(3) {
+		if (!buffer1.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/pacman_beginning.wav")) {
+			std::cout << "could not open file" << std::endl;
+		}
+		beginningSound.setBuffer(buffer1);
+
+		if (!buffer2.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/pacman_chomp.wav")) {
+			std::cout << "could not open file" << std::endl;
+		}
+		chompSound.setBuffer(buffer2);
+
+		if (!buffer3.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/pacman_death.wav")) {
+			std::cout << "could not open file" << std::endl;
+		}
+		deathSound.setBuffer(buffer3);
+
+		if (!font.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/Emulogic-zrEw.ttf")) {
 			std::cout << "Error loading font" << std::endl;
 		}
 
@@ -686,14 +717,26 @@ public:
 	void reset() {
 		gameOver = false;
 		gameWon = false;
+		livesLeft = 3;
 	}
 
 	void checkGameOver(const Ghost& ghost1, const Ghost& ghost2, const Ghost& ghost3, const Ghost& ghost4, Pac& pac, int currentScore, int totalFood) {
 		// Check for ghost collision (lose condition)
-		if (ghost1.checkCollisionWithPac(pac) || ghost2.checkCollisionWithPac(pac) || ghost3.checkCollisionWithPac(pac) || ghost4.checkCollisionWithPac(pac)) 
+		if (ghost1.checkCollisionWithPac(pac) || ghost2.checkCollisionWithPac(pac) || ghost3.checkCollisionWithPac(pac) || ghost4.checkCollisionWithPac(pac))
 		{
-			gameOver = true;
-			gameWon = false;
+			if (livesLeft == 1) {
+				deathSound.play();
+				while (deathSound.getStatus() == Sound::Playing) {}
+				gameOver = true;
+				gameWon = false;
+			}
+			else {
+				deathSound.play();
+				while(deathSound.getStatus() == Sound::Playing) {}
+				livesLeft--;
+				pac.setInitialPosition();
+				pac.setInitialVelocity();
+			}
 		}
 		// Check if all food eaten (win condition)
 		if (currentScore == 1840) {
@@ -703,6 +746,12 @@ public:
 	}
 
 	void draw(RenderWindow& window) {
+		for (int i = 0; i < livesLeft - 1; i++) {
+			CircleShape life(16.f);
+			life.setFillColor(Color::Yellow);
+			life.setPosition(i *(40)+10, 817);
+			window.draw(life);
+		}
 		if (gameOver) {
 			// Center the texts
 			if (gameWon) {
@@ -727,11 +776,24 @@ public:
 			window.draw(restartText);
 		}
 	}
+
+	void playBeginningSound() {
+		beginningSound.play();
+	}
+
+	void playChompSound() {
+		if (chompSound.getStatus() != Sound::Playing) {
+			chompSound.play();
+		}
+		else {
+		}
+	}	
 };
 
 
 int main() {
-	RenderWindow window(VideoMode(690, 765 + 45), "PAC-MAN");
+
+	RenderWindow window(VideoMode(690, 765 + 90), "PAC-MAN");
 	window.setFramerateLimit(60);
 
 	Map map;
@@ -740,6 +802,13 @@ int main() {
 	Clyde* pokey = new Clyde(&map);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
 	Pinky* speedy = new Pinky(&map);
 	Inky* bashful = new Inky(&map, shadow);
+
+	Clock clock;
+
+	GameSimulation game;
+
+	sf::Clock startDelayClock;
+	bool delayOver = false;
 
 	Food* f = new Food[khaana];
 	int foodIndex = 0;
@@ -751,16 +820,19 @@ int main() {
 			}
 		}
 	}
-
 	FoodManager* manage = new FoodManager(f, &map, pac);
-	GameSimulation game;
+
+	game.playBeginningSound();
 
 	while (window.isOpen()) {
+		if (startDelayClock.getElapsedTime().asSeconds() > 4.0f) {
+			delayOver = true;
+		}
+
 		Event event;
 		while (window.pollEvent(event)) {
-			if (event.type == Event::Closed) {
+			if (event.type == Event::Closed)
 				window.close();
-			}
 			else if (event.type == Event::KeyPressed) {
 				if (game.isGameOver()) {
 					// Delete old objects
@@ -797,8 +869,11 @@ int main() {
 				}
 			}
 		}
+		if (event.type == Event::KeyPressed && event.key.code == Keyboard::Escape) {
+			window.close();
+		}
 
-		if (!game.isGameOver()) {
+		if (!game.isGameOver() && delayOver) {
 			pac->update();
 			manage->Score();
 
@@ -816,8 +891,6 @@ int main() {
 			game.checkGameOver(*shadow, *speedy, *bashful, *pokey, *pac,
 				manage->getScore(), khaana);
 		}
-
-		// Drawing
 		window.clear(Color::Black);
 		map.draw(window);
 		pac->draw(window);
@@ -830,7 +903,6 @@ int main() {
 		window.display();
 	}
 
-	// Cleanup
 	delete pac;
 	delete shadow;
 	delete speedy;
