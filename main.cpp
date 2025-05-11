@@ -721,85 +721,109 @@ int main() {
 	window.setFramerateLimit(60);
 
 	Map map;
-	Pac pac(&map);
-	Blinky shadow(&map);
-	Clyde pokey(&map); //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
-	Pinky speedy(&map);
-	Inky bashful(&map, &shadow);
+	Pac* pac = new Pac(&map); // Use pointers for clean reset
+	Blinky* shadow = new Blinky(&map);
+	Clyde* pokey = new Clyde(&map);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
+	Pinky* speedy = new Pinky(&map);
+	Inky* bashful = new Inky(&map, shadow);
 
-	Food f[khaana];
+	Food* f = new Food[khaana];
 	int foodIndex = 0;
 	for (int i = 0; i < 51; ++i) {
 		for (int j = 0; j < 46; ++j) {
 			if (map.isFood(i, j) && foodIndex < khaana) {
-				f[foodIndex] = Food(&map, &pac, i, j);
+				f[foodIndex] = Food(&map, pac, i, j);
 				++foodIndex;
 			}
 		}
 	}
 
-	FoodManager manage(f, &map, &pac);
+	FoodManager* manage = new FoodManager(f, &map, pac);
 	GameSimulation game;
 
 	while (window.isOpen()) {
 		Event event;
 		while (window.pollEvent(event)) {
-			if (event.type == Event::Closed)
+			if (event.type == Event::Closed) {
 				window.close();
-
-			if (!game.isGameOver()) {
-				pac.handleInput(event);
 			}
 			else if (event.type == Event::KeyPressed) {
-				// Reset game state
-				game.reset();
-				// Reset characters
-				pac = Pac(&map);
-				shadow = Blinky(&map);
-				speedy = Pinky(&map);
-				bashful = Inky(&map, &shadow);
-				pokey = Clyde(&map);
-				// Reset food
-				for (int i = 0; i < khaana; ++i) {
-					f[i].isEaten = false;
+				if (game.isGameOver()) {
+					// Delete old objects
+					delete pac;
+					delete shadow;
+					delete speedy;
+					delete bashful;
+					delete pokey;
+					delete[] f;
+					delete manage;
+
+					// Reinitialize everything
+					pac = new Pac(&map);
+					shadow = new Blinky(&map);
+					speedy = new Pinky(&map);
+					bashful = new Inky(&map, shadow);
+					pokey = new Clyde(&map);
+
+					foodIndex = 0;
+					f = new Food[khaana];
+					for (int i = 0; i < 51; ++i) {
+						for (int j = 0; j < 46; ++j) {
+							if (map.isFood(i, j) && foodIndex < khaana) {
+								f[foodIndex] = Food(&map, pac, i, j);
+								++foodIndex;
+							}
+						}
+					}
+					manage = new FoodManager(f, &map, pac);
+					game.reset();
 				}
-				// Reset score
-				manage = FoodManager(f, &map, &pac);
+				else {
+					pac->handleInput(event);
+				}
 			}
 		}
 
 		if (!game.isGameOver()) {
-			pac.update();
-			manage.Score();
+			pac->update();
+			manage->Score();
 
-			// GHOST CHASE TIME >v<
-			shadow.MoveGhost(pac); // Blinky chases Pac-Man
-			speedy.MoveGhost(pac); // Pinky bbg traps Pac-Man
-			bashful.MoveGhost(pac); //unpredictable like a tsundere gf chasing pacman
-			pokey.MoveGhost(pac); //pookie ghost gets scared if too close to pacman like zaid and women
+			// Ghost movement
+			shadow->MoveGhost(*pac); // Blinky chases Pac-Man
+			speedy->MoveGhost(*pac); // Pinky bbg traps Pac-Man
+			bashful->MoveGhost(*pac); //unpredictable like a tsundere gf chasing pacman
+			pokey->MoveGhost(*pac); //pookie ghost gets scared if too close to pacman like zaid and women
 
-			shadow.update();
-			speedy.update();
-			bashful.update();
-			pokey.update();
+			shadow->update();
+			speedy->update();
+			bashful->update();
+			pokey->update();
 
-			// Check game over conditions
-			game.checkGameOver(shadow, speedy, bashful, pokey, pac,
-				manage.getScore(), khaana);
+			game.checkGameOver(*shadow, *speedy, *bashful, *pokey, *pac,
+				manage->getScore(), khaana);
 		}
 
 		// Drawing
 		window.clear(Color::Black);
 		map.draw(window);
-		pac.draw(window);
-		manage.draw(window);
-		pokey.draw(window);
-		speedy.draw(window);
-		bashful.draw(window);
-		shadow.draw(window);
+		pac->draw(window);
+		manage->draw(window);
+		pokey->draw(window);
+		speedy->draw(window);
+		bashful->draw(window);
+		shadow->draw(window);
 		game.draw(window);
 		window.display();
 	}
+
+	// Cleanup
+	delete pac;
+	delete shadow;
+	delete speedy;
+	delete bashful;
+	delete pokey;
+	delete[] f;
+	delete manage;
 
 	return 0;
 }
