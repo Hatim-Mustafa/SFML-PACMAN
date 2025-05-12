@@ -950,6 +950,8 @@ public:
 		if (currentScore == 1840) {
 			gameOver = true;
 			gameWon = true;
+			file.open("score.txt", std::ios::app);
+			file << khana->getScore() << std::endl;
 		}
 	}
 
