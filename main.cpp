@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
-#include "Map.h"
+#include "MAP.h"
 #include <string>
 #include <iostream>
 #include <cmath>
@@ -50,30 +50,31 @@ private:
 	float frameTimer = 0.f;
 	float frameDelay = 0.1f;
 	Vector2i frameSize = { 32, 32 };
-	int totalFrames = 3; 
+	int totalFrames = 3;
 	int directionRow = 1; // 0: right, 1: left, 2: up, 3: down
 
 public:
-	Pac(Map* gameMap, Texture *texture) : pacman(16.f), velocity(-3.f, 0.f), map(gameMap), premove(""),pacTexture(texture) {
-		pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f); // Center in tile
+	Pac(Map* gameMap, Texture* texture) : pacman(16.f), velocity(-3.f, 0.f), map(gameMap), premove(""), pacTexture(texture) {
+		pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f + 1.f); // Center in tile
 		pacman.setFillColor(Color::Yellow);
 		pacman.setOrigin(8.f, 8.f - 45.f); // Center origin
 
+		// yay maine itne piyare koi sprite khud apne hathon se banake daale hain na:)
 		pacSprite.setTexture(*pacTexture);
 		pacSprite.setTextureRect(IntRect(0, 0, frameSize.x, frameSize.y));
 		pacSprite.setOrigin(frameSize.x / 3.5f, frameSize.y / 3.5f);
-		pacSprite.setScale(1.f, 1.f); 
+		pacSprite.setScale(1.f, 1.f);
+		pacSprite.setPosition(22 * 15.f + 8.f, 38.f * 15.f + 46.f);
 
 
 	}
+	void setInitialPosition() {
+		pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f);
+	}
 
-void setInitialPosition() {
-	pacman.setPosition(22 * 15.f + 8.f, 38.f * 15.f);
-}
-
-void setInitialVelocity() {
-	velocity = Vector2f(-3.f, 0.f);
-}
+	void setInitialVelocity() {
+		velocity = Vector2f(-3.f, 0.f);
+	}
 
 	void draw(RenderWindow& window) {
 		//window.draw(pacman);
@@ -91,20 +92,21 @@ void setInitialVelocity() {
 	void handleInput(Event& event) {
 		if (event.type == Event::KeyPressed) {
 			Vector2f temp = velocity;
+			int tempdir = directionRow;
 			if (event.key.code == Keyboard::Right) {
-				velocity = Vector2f(2.f, 0.f);
+				velocity = Vector2f(3.f, 0.f);
 				directionRow = 0;
 			}
 			else if (event.key.code == Keyboard::Left) {
-				velocity = Vector2f(-2.f, 0.f);
+				velocity = Vector2f(-3.f, 0.f);
 				directionRow = 1;
 			}
 			else if (event.key.code == Keyboard::Up) {
-				velocity = Vector2f(0.f, -2.f);
+				velocity = Vector2f(0.f, -3.f);
 				directionRow = 2;
 			}
 			else if (event.key.code == Keyboard::Down) {
-				velocity = Vector2f(0.f, 2.f);
+				velocity = Vector2f(0.f, 3.f);
 				directionRow = 3;
 			}
 			Vector2f checkVelocity(velocity.x * 7, velocity.y * 7);
@@ -112,6 +114,7 @@ void setInitialVelocity() {
 			if (willCollide(newPosition)) {
 				premove = direction();
 				velocity = temp;
+				directionRow = tempdir;
 			}
 			else {
 				premove = "";
@@ -122,26 +125,28 @@ void setInitialVelocity() {
 	void handlePremove(std::string dir) {
 		if (dir != "") {
 			Vector2f temp = velocity;
+			int tempdir = directionRow;
 			if (dir == "Right") {
-				velocity = Vector2f(2.f, 0.f);
+				velocity = Vector2f(3.f, 0.f);
 				directionRow = 0;
 			}
 			else if (dir == "Left") {
-				velocity = Vector2f(-2.f, 0.f);
+				velocity = Vector2f(-3.f, 0.f);
 				directionRow = 1;
 			}
 			else if (dir == "Up") {
-				velocity = Vector2f(0.f, -2.f);
+				velocity = Vector2f(0.f, -3.f);
 				directionRow = 2;
 			}
 			else if (dir == "Down") {
-				velocity = Vector2f(0.f, 2.f);
+				velocity = Vector2f(0.f, 3.f);
 				directionRow = 3;
 			}
 			Vector2f checkVelocity(velocity.x * 7, velocity.y * 7);
 			Vector2f newPosition = pacman.getPosition() + checkVelocity;
 			if (willCollide(newPosition)) {
 				velocity = temp;
+				directionRow = tempdir;
 			}
 			else {
 				premove = "";
@@ -163,9 +168,9 @@ void setInitialVelocity() {
 	}
 
 	void update(float deltaTime) {
-		
+
 		Vector2f pacPos = pacman.getPosition();
-		pacSprite.setPosition(pacPos.x,pacPos.y + 45.f);
+		pacSprite.setPosition(pacPos.x, pacPos.y + 45.f);
 
 		//checking for premove
 		handlePremove(premove);
@@ -300,7 +305,7 @@ private:
 
 public:
 	FoodManager(Food* food, Map* fmap, Pac* pman) : food(food), fmap(fmap), pman(pman), velocity(-3.f, 0.f) {
-		if (!font.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/Emulogic-zrEw.ttf")) {
+		if (!font.loadFromFile("E:/emulogic-font/Emulogic-zrEw.ttf")) {
 			std::cout << "could not open file" << std::endl;
 		}
 
@@ -404,7 +409,7 @@ protected:
 
 
 	bool willCollide(const Vector2f& newPosition) const {
-		float halfSize = 8.f;
+		float halfSize = 16.f;
 		Vector2f edges[4] = {
 			Vector2f(newPosition.x - halfSize, newPosition.y - halfSize),
 			Vector2f(newPosition.x + halfSize, newPosition.y - halfSize),
@@ -488,12 +493,22 @@ public:
 
 		return (distanceX * distanceX + distanceY * distanceY) < (pacRadius * pacRadius);
 	}
+
 };
 
 class Blinky : public Ghost {
 private:
+	sf::Sprite blinkySprite;
+	sf::Texture* blinkyTex;
 public:
-	Blinky(Map* map) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 4.f) {}
+	Blinky(Map* map, Texture *blinkyTex) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 4.f),blinkyTex(blinkyTex) {
+		blinkySprite.setTexture(*blinkyTex);
+
+		blinkySprite.setOrigin(16.f, 16.f);
+
+		blinkySprite.setScale(1.f / 30.f, 1.f/30.f);
+		blinkySprite.setPosition(22.5f * 15.f - 17.f, 18.f * 15.f + 45.f - 13.f);
+	}
 
 	void MoveGhost(Pac& pac) override {
 
@@ -517,56 +532,6 @@ public:
 			ghost.move(velocity);
 		}
 	}
-
-};
-
-class Pinky : public Ghost {
-private:
-	bool released = false;
-	sf::Clock releaseClock;
-	sf::Sprite pinkySprite;
-	sf::Texture* pinkyTex;
-
-public:
-	Pinky(Map* map, Texture *pinkyTex) : Ghost(map, Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 7.f),pinkyTex(pinkyTex) {
-		pinkySprite.setTexture(*pinkyTex);
-
-		pinkySprite.setOrigin(16.f, 16.f);
-
-		pinkySprite.setScale(1.f, 1.f);
-		pinkySprite.setPosition(22.5f * 15.f, 23.f * 15.f + 45.f);
-	}
-
-	void MoveGhost(Pac& pac) override {
-
-		if (releaseClock.getElapsedTime().asSeconds() < releaseDelay)
-			return;
-
-		Vector2f startPos = ghost.getPosition();
-		Vector2f pacPos = pac.getP();
-		Vector2f pacVel = pac.getVelocity();
-
-		// Took everything from PacMan cuz uss nay mayray liyay kya chora tha </3
-
-		Vector2f predictedPos = pacPos + pacVel * 4.f;
-
-		// Predicted pos is basically 4 tiles ahead of where the pacman is facing 
-
-		std::vector<Vector2f> path = bfs(startPos, predictedPos);
-
-		if (!path.empty()) {
-			Vector2f next = path[0];
-			Vector2f dir = next - startPos;
-
-			float length = std::sqrt(dir.x * dir.x + dir.y * dir.y); // Distance formula to check if it is 0 or nah
-			if (length != 0) {
-				dir /= length;
-			}
-
-			velocity = dir * 0.70f;  // Apparantely Pinky slower than Blinky
-			ghost.move(velocity);
-		}
-	}
 	void update() override {
 		Vector2f newPos = ghost.getPosition() + velocity;
 
@@ -586,25 +551,105 @@ public:
 				}
 			}
 		}
-		pinkySprite.setPosition(ghost.getPosition().x,ghost.getPosition().y + 45.f);
+		blinkySprite.setPosition(ghost.getPosition().x - 17.f, ghost.getPosition().y + 45.f - 13.f);
+	}
+
+	void draw(sf::RenderWindow& window) override {
+		//window.draw(ghost);
+		window.draw(blinkySprite);
+	}
+
+};
+
+class Pinky : public Ghost {
+private:
+	bool released = false;
+	sf::Clock releaseClock;
+	sf::Sprite pinkySprite;
+	sf::Texture* pinkyTex;
+
+public:
+	Pinky(Map* map, sf::Texture* pinkyTex)
+		: Ghost(map, sf::Color(246, 87, 214), 22.5, 23, Vector2f(0.f, 0.f), 7.f),
+		pinkyTex(pinkyTex)
+	{
+		pinkySprite.setTexture(*pinkyTex);
+
+		pinkySprite.setOrigin(16.f, 16.f);
+
+		pinkySprite.setScale(1.f, 1.f);
+		pinkySprite.setPosition(22.5f * 15.f, 23.f * 15.f + 45.f);
+	}
+
+	void MoveGhost(Pac& pac) override {
+		if (releaseClock.getElapsedTime().asSeconds() < releaseDelay)
+			return;
+
+		Vector2f startPos = ghost.getPosition();
+		Vector2f pacPos = pac.getP();
+		Vector2f pacVel = pac.getVelocity();
+		Vector2f predictedPos = pacPos + pacVel * 4.f;
+
+		std::vector<Vector2f> path = bfs(startPos, predictedPos);
+
+		if (!path.empty()) {
+			Vector2f next = path[0];
+			Vector2f dir = next - startPos;
+			float length = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+
+			if (length != 0) dir /= length;
+			velocity = dir * 0.70f;
+			ghost.move(velocity);
+		}
+	}
+
+	void update() override {
+		Vector2f newPos = ghost.getPosition() + velocity;
+
+		if (!willCollide(newPos)) {
+			ghost.move(velocity);
+			position = ghost.getPosition();
+		}
+		else {
+			std::vector<Vector2f> possibleDirections = {
+				{speed, 0}, {-speed, 0}, {0, speed}, {0, -speed}
+			};
+
+			for (auto& dir : possibleDirections) {
+				if (!willCollide(ghost.getPosition() + dir)) {
+					velocity = dir;
+					break;
+				}
+			}
+		}
+		pinkySprite.setPosition(ghost.getPosition().x + 10.f,ghost.getPosition().y + 45.f - 10.f);
 	}
 
 	void draw(sf::RenderWindow& window) override {
 		//window.draw(ghost);
 		window.draw(pinkySprite);  
 	}
-
-
 };
+
 
 class Inky : public Ghost {
 private:
 	Blinky* blinky; // Need reference to Blinky for targeting
 	bool released = false;
+	Sprite inkySprite;
+	Texture* inkyTex;
+
 
 public:
-	Inky(Map* map, Blinky* blinkyRef)
-		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 10.f), blinky(blinkyRef) {
+	Inky(Map* map, Blinky* blinkyRef, Texture *inkyTex)
+		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 10.f), blinky(blinkyRef),inkyTex(inkyTex) {
+		inkySprite.setTexture(*inkyTex);
+
+		inkySprite.setOrigin(16.f, 16.f);
+
+		inkySprite.setScale(1.f/ 18.f, 1.f/18.f);
+		inkySprite.setPosition(19.5f * 15.f - 20.f, 23.f * 15.f + 45.f - 20.f);
+
 	}
 
 	void MoveGhost(Pac& pac) override {
@@ -665,6 +710,32 @@ public:
 			}
 		}
 	}
+	void update() override {
+		Vector2f newPos = ghost.getPosition() + velocity;
+
+		if (!willCollide(newPos)) {
+			ghost.move(velocity);
+			position = ghost.getPosition();
+		}
+		else {
+			std::vector<Vector2f> possibleDirections = {
+				{speed, 0}, {-speed, 0}, {0, speed}, {0, -speed}
+			};
+
+			for (auto& dir : possibleDirections) {
+				if (!willCollide(ghost.getPosition() + dir)) {
+					velocity = dir;
+					break;
+				}
+			}
+		}
+		inkySprite.setPosition(ghost.getPosition().x - 20.f, ghost.getPosition().y + 45.f - 20.f);
+	}
+
+	void draw(sf::RenderWindow& window) override {
+		//window.draw(ghost);
+		window.draw(inkySprite);
+	}
 
 private:
 	Vector2f findClosestReachable(const Vector2f& target) {
@@ -692,16 +763,52 @@ private:
 class Clyde : public Ghost {
 private:
 	Vector2f scatterCorner; // Bottom-left corner (0, mapHeight-1)
+	Sprite clydeSprite;
+	Texture* clydeTex;
 
 public:
-	Clyde(Map* map) : Ghost(map, Color(255, 165, 0), 25.5, 23, Vector2f(0.f, -1.5f), 13.f) {
+	Clyde(Map* map, Texture* clydeTex) : Ghost(map, Color(255, 165, 0), 25.5, 23, Vector2f(0.f, -1.5f), 13.f), clydeTex(clydeTex) {
 		scatterCorner = Vector2f(40.f, (map->getRows() - 3) * 15.f + 8.f);
+
+		clydeSprite.setTexture(*clydeTex);
+
+		clydeSprite.setOrigin(16.f, 16.f);
+
+		clydeSprite.setScale(1.f / 16.f, 1.f / 16.f);
+		clydeSprite.setPosition(25.5f * 15.f - 15.f, 23.f * 15.f + 45.f - 15.f);
 	}
 
 	float calculateDistance(const Vector2f& pos1, const Vector2f& pos2) {
 		float dx = pos1.x - pos2.x;
 		float dy = pos1.y - pos2.y;
 		return std::sqrt(dx * dx + dy * dy);
+	}
+
+	void update() override {
+		Vector2f newPos = ghost.getPosition() + velocity;
+
+		if (!willCollide(newPos)) {
+			ghost.move(velocity);
+			position = ghost.getPosition();
+		}
+		else {
+			std::vector<Vector2f> possibleDirections = {
+				{speed, 0}, {-speed, 0}, {0, speed}, {0, -speed}
+			};
+
+			for (auto& dir : possibleDirections) {
+				if (!willCollide(ghost.getPosition() + dir)) {
+					velocity = dir;
+					break;
+				}
+			}
+		}
+		clydeSprite.setPosition(ghost.getPosition().x - 20.f, ghost.getPosition().y + 45.f - 20.f);
+	}
+
+	void draw(sf::RenderWindow& window) override {
+		//window.draw(ghost);
+		window.draw(clydeSprite);
 	}
 
 	void MoveGhost(Pac& pac) override {
@@ -772,7 +879,7 @@ public:
 		}
 		deathSound.setBuffer(buffer3);
 
-		if (!font.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/Emulogic-zrEw.ttf")) {
+		if (!font.loadFromFile("E:/emulogic-font/Emulogic-zrEw.ttf")) {
 			std::cout << "Error loading font" << std::endl;
 		}
 
@@ -816,7 +923,7 @@ public:
 			}
 			else {
 				deathSound.play();
-				while(deathSound.getStatus() == Sound::Playing) {}
+				while (deathSound.getStatus() == Sound::Playing) {}
 				livesLeft--;
 				pac.setInitialPosition();
 				pac.setInitialVelocity();
@@ -833,7 +940,7 @@ public:
 		for (int i = 0; i < livesLeft - 1; i++) {
 			CircleShape life(16.f);
 			life.setFillColor(Color::Yellow);
-			life.setPosition(i *(40)+10, 817);
+			life.setPosition(i * (40) + 10, 817);
 			window.draw(life);
 		}
 		if (gameOver) {
@@ -871,7 +978,7 @@ public:
 		}
 		else {
 		}
-	}	
+	}
 };
 
 
@@ -879,23 +986,41 @@ int main() {
 
 	RenderWindow window(VideoMode(690, 765 + 90), "PAC-MAN");
 	window.setFramerateLimit(60);
-	
-	Texture pinkyTex;
+
+
+	sf::Texture pacTexture;
+	if (!pacTexture.loadFromFile("C:/Users/umera/Downloads/pacman10.png")) {
+		std::cout << "Failed to load Pac-Man sprite!" << std::endl;
+	}
+
+	sf::Texture blinkyTex;
+	if (!blinkyTex.loadFromFile("C:/Users/umera/Downloads/pngegg (4).png")) {
+		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
+	}
+
+	sf::Texture pinkyTex;
 	if (!pinkyTex.loadFromFile("C:/Users/umera/Downloads/pinkysprite.png")) {
 		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
 	}
 
-	Texture pacTexture;
-	if (!pacTexture.loadFromFile("C:/Users/umera/Downloads/pacman10.png")) {
-		std::cout << "Failed to load Pac-Man sprite!" << std::endl;
+	sf::Texture inkyTex;
+	if (!inkyTex.loadFromFile("C:/Users/umera/Downloads/pngegg (2).png")) {
+		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
 	}
-	
+
+	sf::Texture clydeTex;
+	if (!clydeTex.loadFromFile("C:/Users/umera/Downloads/clyde.png")) {
+		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
+	}
+
+
+
 	Map map;
 	Pac* pac = new Pac(&map, &pacTexture); // Use pointers for clean reset
-	Blinky* shadow = new Blinky(&map);
-	Clyde* pokey = new Clyde(&map);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
-	Pinky* speedy = new Pinky(&map, &pinkyTex);
-	Inky* bashful = new Inky(&map, shadow);
+	Blinky* shadow = new Blinky(&map,&blinkyTex);
+	Clyde* pokey = new Clyde(&map,&clydeTex);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
+	Pinky* speedy = new Pinky(&map,&pinkyTex);
+	Inky* bashful = new Inky(&map, shadow,&inkyTex);
 
 	Clock clock;
 
@@ -939,11 +1064,11 @@ int main() {
 					delete manage;
 
 					// Reinitialize everything
-					pac = new Pac(&map,&pacTexture);
-					shadow = new Blinky(&map);
-					speedy = new Pinky(&map, &pinkyTex);
-					bashful = new Inky(&map, shadow);
-					pokey = new Clyde(&map);
+					pac = new Pac(&map, &pacTexture);
+					shadow = new Blinky(&map,&blinkyTex);
+					speedy = new Pinky(&map,&pinkyTex);
+					bashful = new Inky(&map, shadow,&inkyTex);
+					pokey = new Clyde(&map,&clydeTex);
 
 					foodIndex = 0;
 					f = new Food[khaana];
