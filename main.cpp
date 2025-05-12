@@ -305,7 +305,7 @@ private:
 
 public:
 	FoodManager(Food* food, Map* fmap, Pac* pman) : food(food), fmap(fmap), pman(pman), velocity(-3.f, 0.f) {
-		if (!font.loadFromFile("E:/emulogic-font/Emulogic-zrEw.ttf")) {
+		if (!font.loadFromFile("C:/Users/admin/Desktop/Project/pac2/Emulogic-zrEw.ttf")) {
 			std::cout << "could not open file" << std::endl;
 		}
 
@@ -436,7 +436,7 @@ public:
 		position = Vector2f(startX * 15.f, startY * 15.f);
 		ghost.setPosition(position);
 		ghost.setOrigin(16.f, 16.f - 45.f);
-		speed = 0.75f;
+		speed = 1.25f;
 		releaseClock.restart();
 	}
 
@@ -501,12 +501,12 @@ private:
 	sf::Sprite blinkySprite;
 	sf::Texture* blinkyTex;
 public:
-	Blinky(Map* map, Texture *blinkyTex) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 4.f),blinkyTex(blinkyTex) {
+	Blinky(Map* map, Texture* blinkyTex) : Ghost(map, Color(255, 0, 0, 255), 22.5, 18.5, Vector2f(-1.5f, 0.f), 4.f), blinkyTex(blinkyTex) {
 		blinkySprite.setTexture(*blinkyTex);
 
 		blinkySprite.setOrigin(16.f, 16.f);
 
-		blinkySprite.setScale(1.f / 30.f, 1.f/30.f);
+		blinkySprite.setScale(1.f / 30.f, 1.f / 30.f);
 		blinkySprite.setPosition(22.5f * 15.f - 17.f, 18.f * 15.f + 45.f - 13.f);
 	}
 
@@ -528,7 +528,7 @@ public:
 			if (length != 0)
 				dir /= length;
 
-			velocity = dir * 0.75f;
+			velocity = dir * 1.5f;
 			ghost.move(velocity);
 		}
 	}
@@ -622,12 +622,12 @@ public:
 				}
 			}
 		}
-		pinkySprite.setPosition(ghost.getPosition().x + 10.f,ghost.getPosition().y + 45.f - 10.f);
+		pinkySprite.setPosition(ghost.getPosition().x + 10.f, ghost.getPosition().y + 45.f - 10.f);
 	}
 
 	void draw(sf::RenderWindow& window) override {
 		//window.draw(ghost);
-		window.draw(pinkySprite);  
+		window.draw(pinkySprite);
 	}
 };
 
@@ -641,19 +641,18 @@ private:
 
 
 public:
-	Inky(Map* map, Blinky* blinkyRef, Texture *inkyTex)
-		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 10.f), blinky(blinkyRef),inkyTex(inkyTex) {
+	Inky(Map* map, Blinky* blinkyRef, Texture* inkyTex)
+		: Ghost(map, Color::Cyan, 19.5, 23, Vector2f(0.f, 1.5f), 10.f), blinky(blinkyRef), inkyTex(inkyTex) {
 		inkySprite.setTexture(*inkyTex);
 
 		inkySprite.setOrigin(16.f, 16.f);
 
-		inkySprite.setScale(1.f/ 18.f, 1.f/18.f);
+		inkySprite.setScale(1.f / 18.f, 1.f / 18.f);
 		inkySprite.setPosition(19.5f * 15.f - 20.f, 23.f * 15.f + 45.f - 20.f);
 
 	}
 
 	void MoveGhost(Pac& pac) override {
-
 		if (releaseClock.getElapsedTime().asSeconds() < releaseDelay)
 			return;
 
@@ -661,55 +660,42 @@ public:
 		Vector2f pacPos = pac.getP();
 		Vector2f pacVel = pac.getVelocity();
 
-		// Step 1: Find tile two spaces ahead of Pac-Man
-		Vector2f twoAhead = pacPos + pacVel * 30.f; // 2 tiles * 15px per tile
+		// Handle stationary Pac-Man using last facing direction
+		if (pacVel.x == 0 && pacVel.y == 0) {
+			switch (pac.directionRow) {  // Access Pac's private directionRow
+			case 0: pacVel = Vector2f(3, 0); break;   // Right
+			case 1: pacVel = Vector2f(-3, 0); break;  // Left
+			case 2: pacVel = Vector2f(0, -3); break;  // Up
+			case 3: pacVel = Vector2f(0, 3); break;   // Down
+			}
+		}
 
-		// Step 2: Get Blinky's position
+		// Calculate correct 2-tile ahead position (30 pixels = 2*15)
+		Vector2f twoAhead = pacPos + pacVel * 15.f;  // 10 frames * 3px/frame = 30px
 		Vector2f blinkyPos = blinky->getPosition();
 
-		// Step 3: Draw vector from Blinky to twoAhead tile
-		Vector2f vectorToDouble = twoAhead - blinkyPos;
+		// Calculate target using original Inky formula
+		Vector2f targetPos = blinkyPos + 2.f * (twoAhead - blinkyPos);
 
-		// Step 4: Double the vector
-		Vector2f targetPos = blinkyPos + 2.f * vectorToDouble;
+		// Clamp to map boundaries using actual wall coordinates
+		targetPos.x = std::max(15.f, std::min(targetPos.x, 660.f));  // 44 cols * 15px
+		targetPos.y = std::max(15.f, std::min(targetPos.y, 750.f));  // 50 rows * 15px
 
-		// If target is out of bounds, adjust it
-		targetPos.x = std::max(0.f, std::min(targetPos.x, 690.f));
-		targetPos.y = std::max(0.f, std::min(targetPos.y, 765.f + 45.f));
-
-		// Find path to target
-		std::vector<Vector2f> path = bfs(startPos, targetPos);
+		// Find path to adjusted target
+		Vector2f adjustedTarget = findClosestReachable(targetPos);
+		std::vector<Vector2f> path = bfs(startPos, adjustedTarget);
 
 		if (!path.empty()) {
 			Vector2f next = path[0];
 			Vector2f dir = next - startPos;
-
 			float length = std::sqrt(dir.x * dir.x + dir.y * dir.y);
-			if (length != 0)
-				dir /= length;
-
-			velocity = dir * 0.75f;
-			ghost.move(velocity);
-		}
-		else {
-			// If no path found (target in wall), try to get as close as possible
-			// Find the closest reachable position to target
-			Vector2f adjustedTarget = findClosestReachable(targetPos);
-			path = bfs(startPos, adjustedTarget);
-
-			if (!path.empty()) {
-				Vector2f next = path[0];
-				Vector2f dir = next - startPos;
-
-				float length = std::sqrt(dir.x * dir.x + dir.y * dir.y);
-				if (length != 0)
-					dir /= length;
-
-				velocity = dir * 0.75f;
+			if (length > 0) {
+				velocity = (dir / length) * 1.25f;
 				ghost.move(velocity);
 			}
 		}
 	}
+
 	void update() override {
 		Vector2f newPos = ghost.getPosition() + velocity;
 
@@ -840,7 +826,7 @@ public:
 			if (length != 0)
 				dir /= length;
 
-			velocity = dir * 0.75f;
+			velocity = dir * 1.5f;
 			ghost.move(velocity);
 		}
 	}
@@ -864,22 +850,22 @@ class GameSimulation {
 
 public:
 	GameSimulation() : gameOver(false), gameWon(false), livesLeft(3) {
-		if (!buffer1.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/pacman_beginning.wav")) {
+		if (!buffer1.loadFromFile("C:/Users/admin/Desktop/Project/pac2/pacman_beginning.wav")) {
 			std::cout << "could not open file" << std::endl;
 		}
 		beginningSound.setBuffer(buffer1);
 
-		if (!buffer2.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/pacman_chomp.wav")) {
+		if (!buffer2.loadFromFile("C:/Users/admin/Desktop/Project/pac2/pacman_chomp.wav")) {
 			std::cout << "could not open file" << std::endl;
 		}
 		chompSound.setBuffer(buffer2);
 
-		if (!buffer3.loadFromFile("C:/Users/Dell/OneDrive/Desktop/Hatim/OOP/SFML-PACMAN/pacman_death.wav")) {
+		if (!buffer3.loadFromFile("C:/Users/admin/Desktop/Project/pac2/pacman_death.wav")) {
 			std::cout << "could not open file" << std::endl;
 		}
 		deathSound.setBuffer(buffer3);
 
-		if (!font.loadFromFile("E:/emulogic-font/Emulogic-zrEw.ttf")) {
+		if (!font.loadFromFile("C:/Users/admin/Desktop/Project/pac2/Emulogic-zrEw.ttf")) {
 			std::cout << "Error loading font" << std::endl;
 		}
 
@@ -938,8 +924,15 @@ public:
 
 	void draw(RenderWindow& window) {
 		for (int i = 0; i < livesLeft - 1; i++) {
-			CircleShape life(16.f);
-			life.setFillColor(Color::Yellow);
+			Sprite life;
+			Texture lifeTex;
+
+			if (!lifeTex.loadFromFile("C:/Users/admin/Desktop/Project/pac2/pacman.png")) {
+				std::cout << "Failed to load Pac-Man sprite!" << std::endl;
+			}
+
+			life.setTexture(lifeTex);
+			life.setScale(1.f / 15.f, 1.f / 15.f);
 			life.setPosition(i * (40) + 10, 817);
 			window.draw(life);
 		}
@@ -989,27 +982,27 @@ int main() {
 
 
 	sf::Texture pacTexture;
-	if (!pacTexture.loadFromFile("C:/Users/umera/Downloads/pacman10.png")) {
+	if (!pacTexture.loadFromFile("C:/Users/admin/Desktop/Project/pac2/pacman10.png")) {
 		std::cout << "Failed to load Pac-Man sprite!" << std::endl;
 	}
 
 	sf::Texture blinkyTex;
-	if (!blinkyTex.loadFromFile("C:/Users/umera/Downloads/pngegg (4).png")) {
+	if (!blinkyTex.loadFromFile("C:/Users/admin/Desktop/Project/pac2/blinky.png")) {
 		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
 	}
 
 	sf::Texture pinkyTex;
-	if (!pinkyTex.loadFromFile("C:/Users/umera/Downloads/pinkysprite.png")) {
+	if (!pinkyTex.loadFromFile("C:/Users/admin/Desktop/Project/pac2/pinkysprite.png")) {
 		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
 	}
 
 	sf::Texture inkyTex;
-	if (!inkyTex.loadFromFile("C:/Users/umera/Downloads/pngegg (2).png")) {
+	if (!inkyTex.loadFromFile("C:/Users/admin/Desktop/Project/pac2/inky.png")) {
 		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
 	}
 
 	sf::Texture clydeTex;
-	if (!clydeTex.loadFromFile("C:/Users/umera/Downloads/clyde.png")) {
+	if (!clydeTex.loadFromFile("C:/Users/admin/Desktop/Project/pac2/clyde.png")) {
 		std::cout << "Failed to load PinkySprite sprite!" << std::endl;
 	}
 
@@ -1017,10 +1010,10 @@ int main() {
 
 	Map map;
 	Pac* pac = new Pac(&map, &pacTexture); // Use pointers for clean reset
-	Blinky* shadow = new Blinky(&map,&blinkyTex);
-	Clyde* pokey = new Clyde(&map,&clydeTex);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
-	Pinky* speedy = new Pinky(&map,&pinkyTex);
-	Inky* bashful = new Inky(&map, shadow,&inkyTex);
+	Blinky* shadow = new Blinky(&map, &blinkyTex);
+	Clyde* pokey = new Clyde(&map, &clydeTex);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
+	Pinky* speedy = new Pinky(&map, &pinkyTex);
+	Inky* bashful = new Inky(&map, shadow, &inkyTex);
 
 	Clock clock;
 
@@ -1065,10 +1058,10 @@ int main() {
 
 					// Reinitialize everything
 					pac = new Pac(&map, &pacTexture);
-					shadow = new Blinky(&map,&blinkyTex);
-					speedy = new Pinky(&map,&pinkyTex);
-					bashful = new Inky(&map, shadow,&inkyTex);
-					pokey = new Clyde(&map,&clydeTex);
+					shadow = new Blinky(&map, &blinkyTex);
+					speedy = new Pinky(&map, &pinkyTex);
+					bashful = new Inky(&map, shadow, &inkyTex);
+					pokey = new Clyde(&map, &clydeTex);
 
 					foodIndex = 0;
 					f = new Food[khaana];
