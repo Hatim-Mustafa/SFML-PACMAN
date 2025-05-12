@@ -7,6 +7,8 @@
 #include <iostream>
 #include <cmath>
 #include <queue>
+#include <fstream>
+#include <sstream>
 #include <map>
 #include <set>
 
@@ -308,9 +310,8 @@ public:
 		if (!font.loadFromFile("C:/Users/admin/Desktop/Project/pac2/Emulogic-zrEw.ttf")) {
 			std::cout << "could not open file" << std::endl;
 		}
-
 		scoreText.setFont(font);
-		scoreText.setCharacterSize(26);
+		scoreText.setCharacterSize(24);
 		scoreText.setFillColor(Color::White);
 		scoreText.setPosition(0.f, 10.f);
 	}
@@ -846,10 +847,13 @@ class GameSimulation {
 	Text gameOverText;
 	Text winText;
 	Text restartText;
+	FoodManager* khana;
 	int livesLeft;
+	std::fstream file;
+	Text HighScore;
 
 public:
-	GameSimulation() : gameOver(false), gameWon(false), livesLeft(3) {
+	GameSimulation(FoodManager* f) : gameOver(false), gameWon(false), livesLeft(3), khana(f) {
 		if (!buffer1.loadFromFile("C:/Users/admin/Desktop/Project/pac2/pacman_beginning.wav")) {
 			std::cout << "could not open file" << std::endl;
 		}
@@ -886,6 +890,30 @@ public:
 		restartText.setString("Press any key to restart");
 		restartText.setCharacterSize(24);
 		restartText.setFillColor(Color::White);
+
+		//set up highscore text
+		HighScore.setFont(font);
+		HighScore.setCharacterSize(24);
+		HighScore.setFillColor(Color::White);
+		HighScore.setPosition(290.f, 10.f);
+	}
+
+	void HighScoreFunc() {
+		std::ifstream file("score.txt");
+		if (!file) {
+			HighScore.setString("High Score: 0");
+			return;
+		}
+		int hs = 0;
+		int score;
+		std::string s;
+		while (std::getline(file, s)) {
+			score = std::stoi(s);
+			if (hs < score) {
+				hs = score;
+			}
+		}
+		HighScore.setString("High Score: " + std::to_string(hs));
 	}
 
 	bool isGameOver() const { return gameOver; }
@@ -906,6 +934,9 @@ public:
 				while (deathSound.getStatus() == Sound::Playing) {}
 				gameOver = true;
 				gameWon = false;
+				file.open("score.txt", std::ios::app);
+				file << khana->getScore() << std::endl;
+
 			}
 			else {
 				deathSound.play();
@@ -923,6 +954,8 @@ public:
 	}
 
 	void draw(RenderWindow& window) {
+		HighScoreFunc();
+		window.draw(HighScore);
 		for (int i = 0; i < livesLeft - 1; i++) {
 			Sprite life;
 			Texture lifeTex;
@@ -1017,8 +1050,6 @@ int main() {
 
 	Clock clock;
 
-	GameSimulation game;
-
 	sf::Clock startDelayClock;
 	bool delayOver = false;
 
@@ -1033,6 +1064,8 @@ int main() {
 		}
 	}
 	FoodManager* manage = new FoodManager(f, &map, pac);
+
+	GameSimulation game(manage);
 
 	game.playBeginningSound();
 
@@ -1086,6 +1119,7 @@ int main() {
 		}
 
 		if (!game.isGameOver() && delayOver) {
+			game.playChompSound();
 			pac->update(clock.restart().asSeconds());
 			manage->Score();
 
