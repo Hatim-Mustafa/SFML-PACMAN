@@ -230,7 +230,7 @@ private:
 			Vector2f(newPosition.x, newPosition.y + radius), //bottom
 		};
 
-		// Check each edge against walls
+		
 		for (const auto& edge : edges) {
 			int col = static_cast<int>(round(edge.x / 15.f));
 			int row = static_cast<int>(round(edge.y / 15.f));
@@ -279,7 +279,7 @@ public:
 			Vector2f(newPosition.x, newPosition.y + radius), //bottom
 		};
 
-		// Check each edge against food
+		
 		for (const auto& edge : edges) {
 			int col = static_cast<int>(round((edge.x + 3.f) / 15.f));
 			int row = static_cast<int>(round((edge.y + 5.f) / 15.f));
@@ -317,7 +317,7 @@ public:
 	}
 
 	void Score() {
-		// Predict new position
+		
 		Vector2f newPosition = pman->getP() + velocity;
 
 		pman->teleport(newPosition);
@@ -456,7 +456,7 @@ public:
 			position = ghost.getPosition();
 		}
 		else {
-			// When hitting a wall, find a new direction from possible moves
+	
 			std::vector<Vector2f> possibleDirections = {
 				Vector2f(speed, 0),    // Right
 				Vector2f(-speed, 0),    // Left
@@ -464,7 +464,7 @@ public:
 				Vector2f(0, -speed)     // Up
 			};
 
-			// Try all directions and pick one that doesn't collide
+			
 			for (auto& dir : possibleDirections) {
 				if (!willCollide(ghost.getPosition() + dir)) {
 					velocity = dir;
@@ -474,7 +474,7 @@ public:
 		}
 	}
 
-	virtual void MoveGhost(Pac& pac) = 0; // pure virtual
+	virtual void MoveGhost(Pac& pac) = 0; 
 
 	virtual ~Ghost() {}
 	Vector2f getPosition() const { return position; }
@@ -483,9 +483,9 @@ public:
 		Vector2f ghostPos = ghost.getPosition();
 		Vector2f pacPos = pac.getP();
 		float pacRadius = pac.getR();
-		float ghostHalfSize = 16.f; // Since ghost size is 32x32
+		float ghostHalfSize = 16.f; 
 
-		// Simple rectangle-circle collision detection
+		
 		float closestX = std::max(ghostPos.x - ghostHalfSize, std::min(pacPos.x, ghostPos.x + ghostHalfSize));
 		float closestY = std::max(ghostPos.y - ghostHalfSize, std::min(pacPos.y, ghostPos.y + ghostHalfSize));
 
@@ -661,9 +661,9 @@ public:
 		Vector2f pacPos = pac.getP();
 		Vector2f pacVel = pac.getVelocity();
 
-		// Handle stationary Pac-Man using last facing direction
+		
 		if (pacVel.x == 0 && pacVel.y == 0) {
-			switch (pac.directionRow) {  // Access Pac's private directionRow
+			switch (pac.directionRow) {  
 			case 0: pacVel = Vector2f(3, 0); break;   // Right
 			case 1: pacVel = Vector2f(-3, 0); break;  // Left
 			case 2: pacVel = Vector2f(0, -3); break;  // Up
@@ -671,18 +671,16 @@ public:
 			}
 		}
 
-		// Calculate correct 2-tile ahead position (30 pixels = 2*15)
-		Vector2f twoAhead = pacPos + pacVel * 15.f;  // 10 frames * 3px/frame = 30px
+		
+		Vector2f twoAhead = pacPos + pacVel * 15.f;  
 		Vector2f blinkyPos = blinky->getPosition();
 
-		// Calculate target using original Inky formula
 		Vector2f targetPos = blinkyPos + 2.f * (twoAhead - blinkyPos);
 
-		// Clamp to map boundaries using actual wall coordinates
-		targetPos.x = std::max(15.f, std::min(targetPos.x, 660.f));  // 44 cols * 15px
-		targetPos.y = std::max(15.f, std::min(targetPos.y, 750.f));  // 50 rows * 15px
+		targetPos.x = std::max(15.f, std::min(targetPos.x, 660.f));  
+		targetPos.y = std::max(15.f, std::min(targetPos.y, 750.f));  
 
-		// Find path to adjusted target
+
 		Vector2f adjustedTarget = findClosestReachable(targetPos);
 		std::vector<Vector2f> path = bfs(startPos, adjustedTarget);
 
@@ -729,7 +727,7 @@ private:
 		int targetCol = static_cast<int>(target.x / 15.f);
 		int targetRow = static_cast<int>(target.y / 15.f);
 
-		// Check in increasing radius around target
+
 		for (int radius = 1; radius < 10; radius++) {
 			for (int r = targetRow - radius; r <= targetRow + radius; r++) {
 				for (int c = targetCol - radius; c <= targetCol + radius; c++) {
@@ -742,7 +740,7 @@ private:
 			}
 		}
 
-		// Fallback to a default position if nothing found (shouldn't happen)
+
 		return Vector2f(25 * 15.f + 8.f, 23 * 15.f + 8.f);
 	}
 };
@@ -806,14 +804,14 @@ public:
 		Vector2f startPos = ghost.getPosition();
 		Vector2f pacPos = pac.getP();
 
-		// Calculate distance in pixels (8 tiles = 8*15 = 120 pixels)
+
 		float distance = calculateDistance(startPos, pacPos);
 
 		Vector2f targetPos;
-		if (distance > 120.f) { // More than 8 tiles away - chase Pac-Man
+		if (distance > 120.f) { 
 			targetPos = pacPos;
 		}
-		else { // Within 8 tiles - retreat to scatter corner
+		else { 
 			targetPos = scatterCorner;
 		}
 
@@ -926,7 +924,7 @@ public:
 	}
 
 	void checkGameOver(const Ghost& ghost1, const Ghost& ghost2, const Ghost& ghost3, const Ghost& ghost4, Pac& pac, int currentScore, int totalFood) {
-		// Check for ghost collision (lose condition)
+		// Check for ghost collision 
 		if (ghost1.checkCollisionWithPac(pac) || ghost2.checkCollisionWithPac(pac) || ghost3.checkCollisionWithPac(pac) || ghost4.checkCollisionWithPac(pac))
 		{
 			if (livesLeft == 1) {
@@ -946,7 +944,7 @@ public:
 				pac.setInitialVelocity();
 			}
 		}
-		// Check if all food eaten (win condition)
+		// Check if all food eaten 
 		if (currentScore == 1840) {
 			gameOver = true;
 			gameWon = true;
@@ -972,7 +970,7 @@ public:
 			window.draw(life);
 		}
 		if (gameOver) {
-			// Center the texts
+			
 			if (gameWon) {
 				winText.setPosition(
 					window.getSize().x / 2 - winText.getLocalBounds().width / 2,
@@ -1044,7 +1042,7 @@ int main() {
 
 
 	Map map;
-	Pac* pac = new Pac(&map, &pacTexture); // Use pointers for clean reset
+	Pac* pac = new Pac(&map, &pacTexture); 
 	Blinky* shadow = new Blinky(&map, &blinkyTex);
 	Clyde* pokey = new Clyde(&map, &clydeTex);  //pookie ghost hehe :ribbon (why are you adding dumb comments to this very serious project of ours seniya  -zaid)
 	Pinky* speedy = new Pinky(&map, &pinkyTex);
@@ -1082,7 +1080,7 @@ int main() {
 				window.close();
 			else if (event.type == Event::KeyPressed) {
 				if (game.isGameOver()) {
-					// Delete old objects
+					
 					delete pac;
 					delete shadow;
 					delete speedy;
@@ -1091,7 +1089,7 @@ int main() {
 					delete[] f;
 					delete manage;
 
-					// Reinitialize everything
+					
 					pac = new Pac(&map, &pacTexture);
 					shadow = new Blinky(&map, &blinkyTex);
 					speedy = new Pinky(&map, &pinkyTex);
